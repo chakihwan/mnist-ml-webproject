@@ -2,6 +2,14 @@
 
 이 프로젝트는 MNIST 손글씨 숫자 데이터셋으로 학습된 CNN(Convolutional Neural Network) 모델을 사용하여, 사용자가 웹 브라우저에서 직접 그린 숫자를 인식하는 웹 애플리케이션입니다.
 
+## 시연 영상
+
+
+
+https://github.com/user-attachments/assets/df2a9234-20b2-44dc-9e56-88f1ce911bab
+
+
+
 ## 주요 기능
 
 * **모델 학습 (`train.py`)**
