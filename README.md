@@ -5,9 +5,7 @@
 ## 시연 영상
 
 
-
-https://github.com/user-attachments/assets/df2a9234-20b2-44dc-9e56-88f1ce911bab
-
+https://github.com/user-attachments/assets/75496f0b-4fd2-472c-99bd-2925f7d5dfef
 
 
 ## 주요 기능
