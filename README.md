@@ -51,7 +51,7 @@
 └── static/
     └── style.css      # (선택) CSS 스타일 시트
 
-실행 방법
+## 실행 방법
 모델 학습 (최초 1회):
   pip install tensorflow numpy matplotlib
   python train.py
