@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>MNIST Digit Classifier (Draw)</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- (선택) 기존 스타일이 있다면 유지 -->
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --bg-grad-1:#eef2ff; --bg-grad-2:#fef3c7;
+      --card-bg:#ffffff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
+      --primary:#3b82f6; --primary-2:#06b6d4; --primary-hover:#2563eb;
+      --chip-bg:#eef2ff; --chip-bd:#c7d2fe; --chip-tx:#3730a3;
+      --shadow:0 6px 24px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Poppins","Noto Sans KR",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background: linear-gradient(135deg, var(--bg-grad-1), var(--bg-grad-2));
+    }
+    .wrap{
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    .card{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+    h1{
+      margin: 0 0 16px 0;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .subtitle{ margin-top:-6px; color:var(--muted); }
+
+    /* 레이아웃 */
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    /* 좌측 보드 */
+    .board{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+    }
+    canvas#board{
+      width:100%; height:auto;
+      border:1px dashed #ddd;
+      background:#fff; touch-action:none;
+      border-radius:10px;
+      display:block;
+    }
+
+    .tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
+    .tools label{ font-size:13px; color:#374151; display:flex; align-items:center; gap:6px; }
+
+    input[type="range"]{
+      accent-color: var(--primary);
+      height: 6px; border-radius: 999px; background:#e5e7eb;
+      outline:none; cursor:pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+      background:var(--primary); border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.2);
+    }
+
+    /* 버튼들 */
+    .btn{ 
+      appearance:none; border:0; cursor:pointer; border-radius:10px;
+      padding:10px 18px; font-weight:600; transition: .18s transform ease, .18s box-shadow ease, .18s background ease;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn-primary{
+      color:#fff;
+      background: linear-gradient(90deg, var(--primary), var(--primary-2));
+      box-shadow: 0 8px 18px rgba(59,130,246,.35);
+    }
+    .btn-primary:hover{ filter: brightness(1.05); box-shadow: 0 10px 22px rgba(59,130,246,.45); }
+    .btn-ghost{
+      background:#f3f4f6; color:#111827;
+    }
+    .btn-ghost:hover{ background:#e5e7eb; }
+
+    .result{ margin-top:12px; font-weight:700; font-size:18px; min-height:28px; }
+
+    /* 우측 패널 */
+    .panel{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:16px 16px 20px;
+      background:#fafafa;
+    }
+    .panel ul{ margin:8px 0 0 18px; color:#374151; }
+    .panel li{ margin:4px 0; }
+
+    .kpi{
+      display:flex; gap:12px; align-items:baseline; margin:14px 0 8px;
+      opacity:0; transform: translateY(4px); transition: .35s ease;
+    }
+    .kpi.show{ opacity:1; transform: translateY(0); }
+    .kpi .digit{ font-size:34px; font-weight:800; }
+    .kpi .prob{ font-size:15px; color:#374151; }
+
+    .topk{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .chip{
+      background:var(--chip-bg); color:var(--chip-tx);
+      border:1px solid var(--chip-bd);
+      padding:4px 10px; border-radius:999px; font-size:12px;
+    }
+
+    .chart-card{
+      margin-top:14px; background:#fff; border:1px solid var(--border);
+      border-radius:12px; box-shadow:var(--shadow); padding:10px 12px;
+    }
+    .chart-card h3{ margin: 4px 0 10px; }
+
+    /* 로더 */
+    .loader{
+      width:22px; height:22px; border-radius:50%;
+      border:3px solid #e5e7eb; border-top-color: var(--primary);
+      animation: spin .8s linear infinite; display:none; margin-left:8px;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    /* 작은 도움 말 */
+    .hint{ font-size:12px; color:#6b7280; }
+
+    /* 작은 애니메이션 */
+    .pulse{
+      animation: pulse 1.1s ease-out;
+    }
+    @keyframes pulse{
+      0%{ box-shadow:0 0 0 0 rgba(59,130,246,.35); }
+      100%{ box-shadow:0 0 0 14px rgba(59,130,246,0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>MNIST 손글씨 숫자 인식 (그려서 예측)</h1>
+      <div class="subtitle">그림 → 전처리(28×28) → 모델 → 클래스별 확률 시각화</div>
+
+      <div class="grid">
+        <!-- 좌측: 그리기 보드 -->
+        <div class="board">
+          <canvas id="board" width="280" height="280" aria-label="손글씨 입력 캔버스"></canvas>
+
+          <div class="tools">
+            <label>펜 굵기
+              <input id="size" type="range" min="8" max="40" value="24" />
+            </label>
+
+            <button id="clear" type="button" class="btn btn-ghost">지우기</button>
+
+            <button id="predict" type="button" class="btn btn-primary pulse">예측하기</button>
+            <div id="spinner" class="loader" aria-hidden="true"></div>
+          </div>
+
+          <div class="result" id="result"></div>
+        </div>
+
+        <!-- 우측: 정보 + 차트 -->
+        <div class="panel">
+          <p>마우스/터치로 캔버스에 <b>진하게</b> 숫자를 그린 뒤 <b>예측하기</b>를 눌러보세요.</p>
+          <ul>
+            <li>배경은 흰색, 글씨는 검정색으로 서버에 전송됩니다.</li>
+            <li>서버에서 28×28로 전처리 후 모델에 입력합니다.</li>
+          </ul>
+
+          <div class="kpi" id="kpi">
+            <span class="digit" id="kpiDigit">—</span>
+            <span class="prob" id="kpiProb"></span>
+          </div>
+          <div class="topk" id="topk"></div>
+
+          <div class="chart-card">
+            <h3>📈 클래스별 확률</h3>
+            <canvas id="probChart" height="240" style="max-width:100%;"></canvas>
+            <div class="hint">예측 후 막대그래프가 애니메이션으로 업데이트됩니다. (0~9)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========= 캔버스 드로잉 ========= */
+    const drawCanvas = document.getElementById('board');
+    const dctx = drawCanvas.getContext('2d');
+    const sizeEl = document.getElementById('size');
+    const clearBtn = document.getElementById('clear');
+    const predictBtn = document.getElementById('predict');
+    const resultEl = document.getElementById('result');
+    const spinnerEl = document.getElementById('spinner');
+
+    const kpi = document.getElementById('kpi');
+    const kpiDigitEl = document.getElementById('kpiDigit');
+    const kpiProbEl  = document.getElementById('kpiProb');
+    const topkEl     = document.getElementById('topk');
+
+    // 초기 흰 배경
+    dctx.fillStyle = '#fff';
+    dctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
+    dctx.strokeStyle = '#000';
+
+    let drawing = false;
+    let last = null;
+
+    function getPos(e){
+      const r = drawCanvas.getBoundingClientRect();
+      if (e.touches && e.touches[0]) return { x:e.touches[0].clientX - r.left, y:e.touches[0].clientY - r.top };
+      return { x:e.clientX - r.left, y:e.clientY - r.top };
+    }
+    function start(e){ drawing = true; dctx.lineWidth = Number(sizeEl.value); last = getPos(e); }
+    function move(e){
+      if(!drawing) return;
+      const p = getPos(e);
+      dctx.beginPath(); dctx.moveTo(last.x, last.y); dctx.lineTo(p.x, p.y); dctx.stroke();
+      last = p; e.preventDefault();
+    }
+    function end(){ drawing = false; last = null; }
+
+    drawCanvas.addEventListener('mousedown', start);
+    drawCanvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    drawCanvas.addEventListener('touchstart', start, { passive:false });
+    drawCanvas.addEventListener('touchmove', move, { passive:false });
+    drawCanvas.addEventListener('touchend', end);
+
+    clearBtn.addEventListener('click', () => {
+      dctx.fillStyle = '#fff';
+      dctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+      dctx.fillStyle = '#000';
+      resultEl.textContent = '';
+      updateChart(Array(10).fill(0), null);
+      kpi.classList.remove('show');
+      kpiDigitEl.textContent = '—';
+      kpiProbEl.textContent  = '';
+      topkEl.innerHTML = '';
+    });
+
+    /* ========= Chart.js 바 차트 ========= */
+    const chartCtx = document.getElementById('probChart').getContext('2d');
+    const baseColor = '#93c5fd', baseBorder = '#2563eb';
+    const highlightColor = '#3b82f6', highlightBorder = '#1d4ed8';
+    const labels = Array.from({length:10}, (_,i)=>String(i));
+
+    let bgColors = Array(10).fill(baseColor);
+    let borderColors = Array(10).fill(baseBorder);
+
+    const probChart = new Chart(chartCtx,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          label:'Class Probabilities',
+          data:Array(10).fill(0),
+          backgroundColor:bgColors,
+          borderColor:borderColors,
+          borderWidth:2,
+          borderRadius:8,
+          hoverBackgroundColor:'#60a5fa',
+          hoverBorderColor:'#1d4ed8'
+        }]
+      },
+      options:{
+        animation:{ duration:800, easing:'easeOutCubic' },
+        scales:{
+          y:{ beginAtZero:true, max:1, ticks:{ callback:v=> (v*100)+'%' }, grid:{ color:'rgba(0,0,0,.05)'} },
+          x:{ grid:{ display:false } }
+        },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{ callbacks:{ label:ctx=>` ${(ctx.parsed.y*100).toFixed(2)}%` } }
+        }
+      }
+    });
+
+    function updateChart(probs, highlightIdx){
+      probChart.data.datasets[0].data = probs.slice(0,10);
+      bgColors = Array(10).fill(baseColor);
+      borderColors = Array(10).fill(baseBorder);
+      if (Number.isInteger(highlightIdx) && highlightIdx>=0 && highlightIdx<10){
+        bgColors[highlightIdx] = highlightColor;
+        borderColors[highlightIdx] = highlightBorder;
+      }
+      probChart.data.datasets[0].backgroundColor = bgColors;
+      probChart.data.datasets[0].borderColor = borderColors;
+      probChart.update();
+    }
+    updateChart(Array(10).fill(0), null);
+
+    function updateKPI(digit, prob, probs){
+      kpiDigitEl.textContent = String(digit);
+      kpiProbEl.textContent  = `(확률 ${(prob*100).toFixed(2)}%)`;
+      const pairs = (probs||[]).map((p,i)=>({i,p})).sort((a,b)=>b.p-a.p).slice(0,3);
+      topkEl.innerHTML = '';
+      pairs.forEach(({i,p})=>{
+        const chip = document.createElement('span');
+        chip.className='chip'; chip.textContent=`#${i}: ${(p*100).toFixed(1)}%`;
+        topkEl.appendChild(chip);
+      });
+      kpi.classList.add('show');
+    }
+
+    /* ========= 예측 ========= */
+    async function doPredict(){
+      resultEl.textContent = '예측 중...';
+      predictBtn.disabled = true;
+      spinnerEl.style.display = 'inline-block';
+
+      const blob = await new Promise(res => drawCanvas.toBlob(res, 'image/png'));
+      const fd = new FormData(); fd.append('file', blob, 'drawn.png');
+      try{
+        const r = await fetch('/predict', { method:'POST', body:fd });
+        const j = await r.json();
+
+        if (j.error){
+          resultEl.textContent = '에러: ' + j.error;
+          kpi.classList.remove('show');
+        } else {
+          resultEl.textContent = `예측: ${j.digit} (확률 ${(j.prob*100).toFixed(2)}%)`;
+          if (Array.isArray(j.probs) && j.probs.length===10){
+            updateChart(j.probs, j.digit);
+            updateKPI(j.digit, j.prob, j.probs);
+          }
+          // 버튼 살짝 튕김 효과
+          predictBtn.classList.remove('pulse');
+          void predictBtn.offsetWidth; // reflow
+          predictBtn.classList.add('pulse');
+        }
+      } catch(e){
+        resultEl.textContent = '네트워크 에러';
+        kpi.classList.remove('show');
+      } finally{
+        spinnerEl.style.display = 'none';
+        predictBtn.disabled = false;
+      }
+    }
+    predictBtn.addEventListener('click', doPredict);
+  </script>
+</body>
+</html>
