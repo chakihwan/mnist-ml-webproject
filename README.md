@@ -50,7 +50,7 @@
 │   └── index.html     # 메인 웹 페이지 (캔버스, 차트 UI)
 └── static/
     └── style.css      # (선택) CSS 스타일 시트
-```
+
 실행 방법
 모델 학습 (최초 1회):
   pip install tensorflow numpy matplotlib
