@@ -60,6 +60,6 @@ https://github.com/user-attachments/assets/75496f0b-4fd2-472c-99bd-2925f7d5dfef
 
 ## 실행 방법
 모델 학습 (최초 1회):
-  pip install tensorflow numpy matplotlib
-  python train.py
-(이 과정을 통해 model.weights.h5 파일이 생성됩니다.)
+  * pip install tensorflow numpy matplotlib
+  * python train.py
+* (이 과정을 통해 model.weights.h5 파일이 생성됩니다.)
